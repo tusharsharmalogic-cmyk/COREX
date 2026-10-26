@@ -1,0 +1,42 @@
+{
+  "vision": {
+    "detectRange": 720,
+    "loseTargetRange": 1150,
+    "fovDegrees": 360,
+    "losCheck": true
+  },
+  "loot": {
+    "searchRadius": 3000,
+    "maxGuns": 2,
+    "wantArmorIfBelow": 100,
+    "wantHealthIfBelow": 20,
+    "ammoPickupIfBelowPercent": 0,
+    "pickupDelay": 350
+  },
+  "combat": {
+    "preferredRange": 320,
+    "engageMinDist": 180,
+    "strafeChangeMs": 900,
+    "strafeSpeed": 0.65,
+    "chaseSpeed": 1.0,
+    "backupSpeed": 0.75,
+    "reactionTimeMs": 220,
+    "aimJitterDeg": 5.5,
+    "spreadMultiplier": 1.35
+  },
+  "weaponChoice": {
+    "closeRangeMax": 280,
+    "longRangeMin": 520
+  },
+  "patrol": {
+    "waypointReachedDist": 70,
+    "waypointTimeoutMs": 6500,
+    "chaseGiveUpAfterMs": 4500,
+    "chaseMemoryMs": 2500,
+    "returnToPatrolAfterMs": 3000
+  },
+  "matchDefaults": {
+    "botCount": 8,
+    "timeLimitMinutes": 5
+  }
+}

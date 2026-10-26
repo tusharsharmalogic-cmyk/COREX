@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>COREX</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
+  html, body {
+    width:100%; height:100%;
+    background:#000; overflow:hidden;
+    touch-action:none;
+    font-family: Arial, sans-serif;
+  }
+  #app {
+    display:flex; flex-direction:column;
+    width:100vw; height:100vh;
+  }
+
+  /* ================= LOBBY ================= */
+  #lobby-overlay {
+    position:fixed; inset:0;
+    background:radial-gradient(circle at 50% 30%, #0d1a10 0%, #000 70%);
+    z-index:10000;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    color:#c9d1d9;
+  }
+  #lobby-overlay.open { display:flex; }
+  #lobby-box {
+    width:min(92vw, 420px);
+    background:#0f1a12;
+    border:1px solid #1e3d24;
+    border-radius:14px;
+    padding:22px;
+    box-shadow:0 0 30px rgba(39,174,96,0.25);
+  }
+  #lobby-box h1 {
+    text-align:center;
+    color:#27ae60;
+    font-size:26px;
+    letter-spacing:6px;
+    margin-bottom:6px;
+  }
+  #lobby-box .sub {
+    text-align:center;
+    color:#667;
+    font-size:11px;
+    letter-spacing:3px;
+    margin-bottom:20px;
+  }
+  .lobby-panel { display:none; }
+  .lobby-label {
+    color:#88aabb;
+    font-size:11px;
+    letter-spacing:2px;
+    margin-bottom:6px;
+    text-transform:uppercase;
+  }
+  .lobby-input {
+    width:100%;
+    background:#0a1a0f;
+    border:1px solid #1e3d24;
+    border-radius:8px;
+    padding:12px;
+    color:#fff;
+    font-size:16px;
+    margin-bottom:16px;
+    outline:none;
+  }
+  .lobby-input:focus { border-color:#27ae60; }
+  .lobby-btn {
+    width:100%;
+    background:#1a2f1e;
+    border:1px solid #27ae60;
+    color:#27ae60;
+    border-radius:8px;
+    padding:14px;
+    font-size:15px;
+    font-weight:bold;
+    letter-spacing:2px;
+    cursor:pointer;
+    margin-bottom:10px;
+    text-transform:uppercase;
+  }
+  .lobby-btn:active { background:#27ae60; color:#000; }
+  .lobby-btn.secondary {
+    border-color:#30363d; color:#8899aa;
+    background:#161b22;
+  }
+  .lobby-row {
+    display:flex; gap:10px;
+  }
+  .lobby-row .lobby-btn { flex:1; }
+
+  /* ================= HUD ================= */
+  #top-hud {
+    height:80px;
+    background:#0d0d0d;
+    border-bottom:1px solid #222;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:6px 10px;
+    position:relative;
+    gap:10px;
+  }
+  #seed-label {
+    display:none;
+  }
+  #minimap-wrap {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-shrink:0;
+  }
+  #minimap {
+    width:64px;
+    height:64px;
+    border-radius:4px;
+    border:2px solid #27ae60;
+    background:#0a1a0a;
+    overflow:hidden;
+    position:relative;
+    cursor:pointer;
+    box-shadow:0 0 8px rgba(39,174,96,0.4);
+    flex-shrink:0;
+  }
+  #minimap-waypoint {
+    position:absolute;
+    width:8px; height:8px;
+    background:#f1c40f;
+    border:1px solid #fff;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    pointer-events:none;
+    display:none;
+    box-shadow:0 0 6px #f1c40f;
+  }
+  #minimap canvas { width:100%; height:100%; display:block; image-rendering:pixelated; }
+  #minimap-marker {
+    position:absolute;
+    width:8px; height:8px;
+    background:#3498db;
+    border:1px solid #fff;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    pointer-events:none;
+    box-shadow:0 0 4px #3498db;
+  }
+
+  #hud-center {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    flex:1;
+    min-width:0;
+    overflow:hidden;
+  }
+  #timer-label {
+    color:#fff;
+    font-size:16px;
+    font-weight:bold;
+    letter-spacing:1px;
+    text-shadow:0 0 8px rgba(39,174,96,0.8);
+    white-space:nowrap;
+  }
+  #score-label {
+    color:#8899aa;
+    font-size:10px;
+    letter-spacing:0.5px;
+    white-space:nowrap;
+  }
+
+  #fullmap-overlay {
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.92);
+    z-index:9999;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  #fullmap-overlay.open { display:flex; }
+  #fullmap-box {
+    width:min(90vw, 90vh);
+    height:min(90vw, 90vh);
+    border:2px solid #27ae60;
+    border-radius:8px;
+    background:#0a1a0a;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 0 20px rgba(39,174,96,0.5);
+  }
+  #fullmap-box canvas { width:100%; height:100%; display:block; image-rendering:pixelated; }
+  #fullmap-marker {
+    position:absolute;
+    width:14px; height:14px;
+    background:#3498db;
+    border:2px solid #fff;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    pointer-events:none;
+    box-shadow:0 0 8px #3498db;
+    z-index:2;
+  }
+  #fullmap-waypoint {
+    position:absolute;
+    width:18px; height:18px;
+    background:#f1c40f;
+    border:2px solid #fff;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    pointer-events:none;
+    display:none;
+    box-shadow:0 0 10px #f1c40f;
+    z-index:2;
+  }
+  #fullmap-hint {
+    position:absolute;
+    bottom:8px; left:50%;
+    transform:translateX(-50%);
+    color:#8899aa;
+    font-size:11px;
+    letter-spacing:1px;
+    background:rgba(0,0,0,0.6);
+    padding:4px 10px;
+    border-radius:4px;
+    pointer-events:none;
+  }
+  #fullmap-close {
+    position:absolute;
+    top:6px; right:6px;
+    background:rgba(231,76,60,0.85);
+    color:#fff;
+    border:none;
+    border-radius:50%;
+    width:26px; height:26px;
+    font-size:14px;
+    font-weight:bold;
+    cursor:pointer;
+  }
+
+  #hud-right {
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    align-items:flex-end;
+    flex-shrink:0;
+    padding-right:4px;
+  }
+  .hud-bar-row {
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .hud-bar-label {
+    font-size:12px;
+    width:16px;
+    text-align:center;
+    line-height:1;
+  }
+  .hud-bar-bg {
+    width:70px;
+    height:10px;
+    background:#1a1a1a;
+    border:1px solid #333;
+    border-radius:2px;
+    overflow:hidden;
+    position:relative;
+  }
+  .hud-bar-fill {
+    height:100%;
+    width:100%;
+    transition:width 0.15s;
+  }
+  .hud-bar-fill.hp    { background:linear-gradient(90deg,#c0392b,#e74c3c); }
+  .hud-bar-fill.armor { background:linear-gradient(90deg,#2980b9,#3498db); }
+  .hud-bar-val {
+    font-size:10px;
+    color:#ccc;
+    font-weight:bold;
+    min-width:22px;
+    text-align:right;
+  }
+  #weapon-slots {
+    display:flex;
+    gap:4px;
+    margin-top:3px;
+    width:100%;
+    justify-content:flex-end;
+  }
+  .wslot {
+    min-width:64px;
+    max-width:78px;
+    height:20px;
+    padding:0 4px;
+    background:#1a1a1a;
+    border:1px solid #333;
+    border-radius:3px;
+    color:#667;
+    font-size:9px;
+    font-weight:bold;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .wslot.active {
+    border-color:#27ae60;
+    color:#27ae60;
+    background:#0f1a12;
+  }
+
+  #game-area {
+    flex:1;
+    position:relative;
+    overflow:hidden;
+    background:#0d1117;
+  }
+  #game { position:absolute; inset:0; }
+  #game canvas { display:block; }
+
+  #controls {
+    height:200px;
+    background:#0a0a0a;
+    border-top:1px solid #222;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    padding:12px 20px 0 20px;
+    flex-shrink:0;
+    position:relative;
+  }
+
+  .joy-base {
+    width:130px; height:130px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.05);
+    border:2px solid rgba(255,255,255,0.18);
+    position:relative;
+    touch-action:none;
+  }
+  .joy-knob {
+    width:62px; height:62px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.22);
+    border:2px solid rgba(255,255,255,0.55);
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    pointer-events:none;
+  }
+  .joy-base.aiming .joy-knob {
+    background:rgba(231,76,60,0.5);
+    border-color:rgba(231,76,60,0.9);
+  }
+
+  /* Center column: switch button between joysticks */
+  #center-controls {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    margin-top:20px;
+  }
+  #switch-btn {
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, #2a7a4a, #1a4a2a);
+    border:2px solid #27ae60;
+    color:#fff;
+    font-size:12px;
+    font-weight:bold;
+    letter-spacing:1px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:2px;
+    touch-action:none;
+    cursor:pointer;
+    box-shadow:0 0 14px rgba(39,174,96,0.5);
+  }
+  #switch-btn:active { background:radial-gradient(circle at 30% 30%, #27ae60, #1a5a2a); }
+  #switch-btn .icon { font-size:20px; }
+  #switch-btn .lbl { font-size:9px; opacity:0.85; }
+
+  #menu-btn {
+    width:58px; height:58px;
+    border-radius:50%;
+    background:rgba(39,174,96,0.75);
+    border:2px solid rgba(39,174,96,1);
+    color:#fff;
+    font-size:24px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    touch-action:none;
+    cursor:pointer;
+    position:absolute;
+    right:20px;
+    bottom:20px;
+  }
+  #menu-btn:active { background:rgba(46,204,113,1); }
+
+  #menu-panel {
+    position:absolute;
+    right:20px; bottom:90px;
+    background:#161b22;
+    border:1px solid #30363d;
+    border-radius:12px;
+    padding:10px;
+    display:flex;
+    gap:8px;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity 0.15s;
+    box-shadow:0 6px 20px rgba(0,0,0,0.6);
+    z-index:50;
+  }
+  #menu-panel.open { opacity:1; pointer-events:auto; }
+  #menu-panel button {
+    background:#21262d;
+    color:#c9d1d9;
+    border:1px solid #30363d;
+    border-radius:8px;
+    padding:10px 14px;
+    font-size:13px;
+    font-weight:bold;
+    cursor:pointer;
+  }
+  #menu-panel button:active { background:#30363d; }
+
+  /* ================= MATCH END ================= */
+  #match-overlay {
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.9);
+    z-index:10001;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  #match-overlay.open { display:flex; }
+  #match-box {
+    width:min(92vw, 440px);
+    background:#0f1a12;
+    border:2px solid #27ae60;
+    border-radius:14px;
+    padding:22px;
+    box-shadow:0 0 40px rgba(39,174,96,0.4);
+    color:#c9d1d9;
+  }
+  #match-title {
+    text-align:center;
+    color:#27ae60;
+    font-size:28px;
+    letter-spacing:4px;
+    margin-bottom:6px;
+    font-weight:bold;
+  }
+  #match-subtitle {
+    text-align:center;
+    color:#8899aa;
+    font-size:12px;
+    letter-spacing:1px;
+    margin-bottom:18px;
+  }
+  #match-score {
+    max-height:40vh;
+    overflow-y:auto;
+    margin-bottom:16px;
+  }
+  .score-row {
+    display:flex;
+    justify-content:space-between;
+    padding:8px 12px;
+    border-bottom:1px solid #1a2f1e;
+    font-size:13px;
+    color:#8899aa;
+  }
+  .score-row.me {
+    background:#0f2a17;
+    color:#27ae60;
+    font-weight:bold;
+    border-radius:6px;
+  }
+  .score-row span:first-child { width:30px; }
+  .score-row span:nth-child(2) { flex:1; }
+  #match-restart {
+    width:100%;
+    background:#27ae60;
+    border:none;
+    color:#000;
+    border-radius:8px;
+    padding:14px;
+    font-size:15px;
+    font-weight:bold;
+    letter-spacing:2px;
+    cursor:pointer;
+    text-transform:uppercase;
+  }
+  #match-restart:active { background:#2ecc71; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="top-hud">
+    <div id="minimap-wrap">
+      <div id="minimap" title="Tap to open full map">
+        <canvas id="minimap-canvas"></canvas>
+        <div id="minimap-marker"></div>
+        <div id="minimap-waypoint"></div>
+      </div>
+      <div id="seed-label" style="display:none">SEED: ---</div>
+    </div>
+
+    <div id="hud-center">
+      <div id="timer-label">--:--</div>
+      <div id="score-label">KILLS: 0 · DEATHS: 0</div>
+    </div>
+
+    <div id="hud-right">
+      <div class="hud-bar-row">
+        <div class="hud-bar-label">&#10084;&#65039;</div>
+        <div class="hud-bar-bg"><div class="hud-bar-fill hp" id="hp-fill"></div></div>
+        <div class="hud-bar-val" id="hp-val">100</div>
+      </div>
+      <div class="hud-bar-row">
+        <div class="hud-bar-label">&#128737;&#65039;</div>
+        <div class="hud-bar-bg"><div class="hud-bar-fill armor" id="armor-fill"></div></div>
+        <div class="hud-bar-val" id="armor-val">0</div>
+      </div>
+      <div id="weapon-slots">
+        <div class="wslot" id="slot1">SLOT 1</div>
+        <div class="wslot" id="slot2">SLOT 2</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="game-area">
+    <div id="game"></div>
+  </div>
+
+  <div id="controls">
+    <div class="joy-base" id="left-joy">
+      <div class="joy-knob" id="left-knob"></div>
+    </div>
+
+    <div id="center-controls">
+      <div id="switch-btn">
+        <span class="icon">&#128260;</span>
+        <span class="lbl">SWITCH</span>
+      </div>
+    </div>
+
+    <div class="joy-base" id="right-joy">
+      <div class="joy-knob" id="right-knob"></div>
+    </div>
+
+    <div id="menu-panel" style="display:none">
+      <button data-act="settings">Settings</button>
+      <button data-act="map">Map</button>
+      <button data-act="exit">Exit</button>
+    </div>
+  </div>
+
+  <div id="fullmap-overlay">
+    <div id="fullmap-box">
+      <canvas id="fullmap-canvas"></canvas>
+      <div id="fullmap-marker"></div>
+      <div id="fullmap-waypoint"></div>
+      <div id="fullmap-hint">Tap to set waypoint · Tap it again to remove</div>
+      <button id="fullmap-close">&#10005;</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== LOBBY ===================== -->
+<div id="lobby-overlay">
+  <div id="lobby-box">
+    <h1>COREX</h1>
+    <div class="sub">DEATHMATCH</div>
+
+    <div id="lobby-main" class="lobby-panel">
+      <div class="lobby-label">Player Name</div>
+      <input id="lobby-name" class="lobby-input" type="text" maxlength="16" placeholder="Enter name">
+      <button id="lobby-play" class="lobby-btn">PLAY</button>
+    </div>
+
+    <div id="lobby-deathmatch" class="lobby-panel">
+      <div class="lobby-label">Select Mode</div>
+      <button id="lobby-dm" class="lobby-btn">&#128165; DEATHMATCH</button>
+      <button id="lobby-back-dm" class="lobby-btn secondary">&#8592; Back</button>
+    </div>
+
+    <div id="lobby-time" class="lobby-panel">
+      <div class="lobby-label">Deathmatch Type</div>
+      <button id="lobby-time-btn" class="lobby-btn">&#9201; TIME CONTROL</button>
+      <button id="lobby-last-btn" class="lobby-btn">&#127942; LAST STANDING</button>
+      <button id="lobby-back-time" class="lobby-btn secondary">&#8592; Back</button>
+    </div>
+
+    <div id="lobby-bots" class="lobby-panel">
+      <div class="lobby-label" id="lobby-time-mode-label">TIME (min)</div>
+      <input id="lobby-time-min" class="lobby-input" type="number" min="1" max="30" value="5">
+      <div class="lobby-label">Number of Bots (1-10)</div>
+      <input id="lobby-bot-count" class="lobby-input" type="number" min="1" max="10" value="8">
+      <button id="lobby-start-btn" class="lobby-btn">&#9654; START MATCH</button>
+      <button id="lobby-back-bots" class="lobby-btn secondary">&#8592; Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MATCH END ===================== -->
+<div id="match-overlay">
+  <div id="match-box">
+    <div id="match-title">MATCH OVER</div>
+    <div id="match-subtitle"></div>
+    <div id="match-score"></div>
+    <button id="match-restart">Play Again</button>
+  </div>
+</div>
+
+<script src="phaser.min.js"></script>
+<script src="js/weapons.js?v=6"></script>
+<script src="js/pickups.js?v=6"></script>
+<script src="js/joystick.js?v=4"></script>
+<script src="js/lobby.js?v=4"></script>
+<script src="js/Pathfinder.js?v=3"></script>
+<script src="js/Enemy.js?v=29"></script>
+<script src="js/main.js?v=21"></script>
+<script>
+window.addEventListener('error', function(e) {
+  var d = document.getElementById('err-bar');
+  if (!d) {
+    d = document.createElement('div');
+    d.id = 'err-bar';
+    d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;' +
+      'font-size:12px;padding:6px 10px;z-index:99999;white-space:pre-wrap;max-height:40vh;overflow:auto;';
+    document.body.appendChild(d);
+  }
+  d.textContent += '[ERR] ' + (e.message || e.error) + ' @ ' +
+    (e.filename ? e.filename.split('/').pop() + ':' + e.lineno : '?') + '\n';
+});
+window.addEventListener('unhandledrejection', function(e) {
+  var d = document.getElementById('err-bar');
+  if (!d) {
+    d = document.createElement('div');
+    d.id = 'err-bar';
+    d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;' +
+      'font-size:12px;padding:6px 10px;z-index:99999;white-space:pre-wrap;max-height:40vh;overflow:auto;';
+    document.body.appendChild(d);
+  }
+  d.textContent += '[PROMISE] ' + (e.reason && e.reason.message || e.reason) + '\n';
+});
+</script>
+</body>
+</html>
